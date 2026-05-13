@@ -5,35 +5,47 @@ import cv2
 import numpy as np
 from io import BytesIO
 
-st.set_page_config(page_title="Document Scanner", layout="centered")
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(
+    page_title="Adobe Scan Style Document Scanner",
+    page_icon="📄",
+    layout="centered"
+)
 
+# ---------------- TITLE ----------------
 st.title("📄 Document Scanner")
-st.write("Upload a document image, convert it to black & white, and download it as a PDF.")
+st.write(
+    "Upload a document image, convert it into a clean black & white scan, "
+    "and download it as a PDF."
+)
 
+# ---------------- FILE UPLOAD ----------------
 uploaded_file = st.file_uploader(
-    "Upload an image",
+    "Upload Document Image",
     type=["jpg", "jpeg", "png"]
 )
 
-def process_document(image):
+# ---------------- IMAGE PROCESSING FUNCTION ----------------
+def scan_document(pil_image):
     """
-    Convert image to grayscale + adaptive threshold
-    for Adobe Scan-like effect.
+    Convert uploaded image into Adobe Scan-like black & white document.
     """
-    img_np = np.array(image)
 
-    # Convert RGB to BGR for OpenCV
-    img_cv = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+    # Convert PIL image to NumPy array
+    image = np.array(pil_image)
+
+    # Convert RGB to BGR (OpenCV format)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
     # Convert to grayscale
-    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Noise reduction
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    # Remove noise
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # Adaptive threshold for clean document look
+    # Adaptive threshold for scanner effect
     scanned = cv2.adaptiveThreshold(
-        blur,
+        blurred,
         255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY,
@@ -43,36 +55,43 @@ def process_document(image):
 
     return scanned
 
+# ---------------- MAIN APP ----------------
 if uploaded_file is not None:
-    # Open uploaded image
+
+    # Open image
     image = Image.open(uploaded_file).convert("RGB")
 
-    st.subheader("Original Image")
+    # Show original image
+    st.subheader("🖼 Original Image")
     st.image(image, use_container_width=True)
 
-    if st.button("Convert to Scan PDF"):
+    # Button
+    if st.button("✨ Convert to Scanned PDF"):
+
         # Process image
-        scanned_img = process_document(image)
+        scanned_image = scan_document(image)
 
-        st.subheader("Scanned Black & White Image")
-        st.image(scanned_img, clamp=True, use_container_width=True)
+        # Show processed image
+        st.subheader("📑 Scanned Black & White Image")
+        st.image(scanned_image, use_container_width=True, clamp=True)
 
-        # Convert numpy image to PIL
-        pil_img = Image.fromarray(scanned_img)
+        # Convert NumPy array back to PIL
+        scanned_pil = Image.fromarray(scanned_image)
 
-        # Convert to RGB for PDF export
-        pdf_img = pil_img.convert("RGB")
+        # Convert to RGB for PDF
+        pdf_image = scanned_pil.convert("RGB")
 
-        # Save PDF in memory
-        pdf_bytes = BytesIO()
-        pdf_img.save(pdf_bytes, format="PDF")
-        pdf_bytes.seek(0)
+        # Save PDF to memory
+        pdf_buffer = BytesIO()
+        pdf_image.save(pdf_buffer, format="PDF")
+        pdf_buffer.seek(0)
 
-        st.success("PDF created successfully!")
+        st.success("✅ PDF Created Successfully!")
 
+        # Download button
         st.download_button(
             label="⬇ Download PDF",
-            data=pdf_bytes,
+            data=pdf_buffer,
             file_name="scanned_document.pdf",
             mime="application/pdf"
         )
