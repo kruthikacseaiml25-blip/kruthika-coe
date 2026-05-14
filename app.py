@@ -1,53 +1,74 @@
 import streamlit as st
+import sqlite3
+import pandas as pd
 
-# Page settings
-st.set_page_config(page_title="Skill Mitra", page_icon="🤝")
+# Database connection
+conn = sqlite3.connect("users.db", check_same_thread=False)
+c = conn.cursor()
 
-# Title
-st.title("🤝 Skill Mitra App")
-
-# ---------------- LOGIN SECTION ----------------
-st.header("Login")
-
-username = st.text_input("Enter Username")
-password = st.text_input("Enter Password", type="password")
-
-# Simple login button
-if st.button("Login"):
-    if username and password:
-        st.success(f"Welcome {username}!")
-    else:
-        st.error("Please enter username and password")
-
-# ---------------- SKILL SECTION ----------------
-st.header("Your Skills")
-
-skills_have = st.text_area(
-    "Enter the skills you already know",
-    placeholder="Example: Python, Canva, Video Editing"
+# Create table
+c.execute('''
+CREATE TABLE IF NOT EXISTS users(
+    username TEXT,
+    password TEXT,
+    skills_have TEXT,
+    skills_need TEXT,
+    points INTEGER
 )
+''')
 
-skills_learn = st.text_area(
-    "Enter the skills you want to learn",
-    placeholder="Example: AI, Web Development, UI/UX"
-)
+conn.commit()
 
-# Save button
-if st.button("Save Skills"):
-    if skills_have and skills_learn:
-        st.success("Skills Saved Successfully!")
+st.title("🤝 Skill Mitra")
 
-        st.subheader("📌 Your Profile")
+menu = ["Register", "Login", "View Users"]
+choice = st.sidebar.selectbox("Menu", menu)
 
-        st.write("### Skills You Have")
-        st.write(skills_have)
+# Register
+if choice == "Register":
+    st.subheader("Create New Account")
 
-        st.write("### Skills You Want to Learn")
-        st.write(skills_learn)
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    skills_have = st.text_area("Skills You Have")
+    skills_need = st.text_area("Skills You Want")
 
-    else:
-        st.warning("Please fill all fields")
+    if st.button("Register"):
+        c.execute("INSERT INTO users VALUES (?,?,?,?,?)",
+                  (username, password, skills_have, skills_need, 100))
+        conn.commit()
 
-# ---------------- FOOTER ----------------
-st.markdown("---")
-st.write("Made with ❤️ using Streamlit")
+        st.success("Account Created Successfully!")
+
+# Login
+elif choice == "Login":
+    st.subheader("Login")
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        c.execute("SELECT * FROM users WHERE username=? AND password=?",
+                  (username, password))
+
+        data = c.fetchone()
+
+        if data:
+            st.success(f"Welcome {username}")
+
+            st.write("### Your Skills")
+            st.write("Skills Have:", data[2])
+            st.write("Skills Need:", data[3])
+            st.write("Points:", data[4])
+
+        else:
+            st.error("Invalid Credentials")
+
+# View Users
+elif choice == "View Users":
+    st.subheader("All Registered Users")
+
+    df = pd.read_sql_query("SELECT username, skills_have, skills_need, points FROM users", conn)
+
+    st.dataframe(df)
+ 
