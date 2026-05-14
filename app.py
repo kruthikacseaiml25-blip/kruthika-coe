@@ -1,36 +1,53 @@
-# app.py
-import streamlit as st
-from PIL import Image
-import io
+ import streamlit as st
 
-st.set_page_config(page_title="Image to PDF Scanner", page_icon="📄")
+# Page settings
+st.set_page_config(page_title="Skill Mitra", page_icon="🤝")
 
-st.title("📄 Image to PDF Scanner")
-st.write("Upload an image of your document, convert it to black & white, and download as PDF!")
+# Title
+st.title("🤝 Skill Mitra App")
 
-# File uploader
-uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
+# ---------------- LOGIN SECTION ----------------
+st.header("Login")
 
-if uploaded_file:
-    # Open image
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Original Image", use_column_width=True)
-    
-    # Button to process image
-    if st.button("Convert to Grayscale & PDF"):
-        # Convert to grayscale
-        gray_image = image.convert("L")
-        st.image(gray_image, caption="Grayscale Image", use_column_width=True)
+username = st.text_input("Enter Username")
+password = st.text_input("Enter Password", type="password")
 
-        # Convert grayscale image to PDF
-        pdf_bytes = io.BytesIO()
-        gray_image.save(pdf_bytes, format="PDF")
-        pdf_bytes.seek(0)
+# Simple login button
+if st.button("Login"):
+    if username and password:
+        st.success(f"Welcome {username}!")
+    else:
+        st.error("Please enter username and password")
 
-        # Download button
-        st.download_button(
-            label="📥 Download PDF",
-            data=pdf_bytes,
-            file_name="document.pdf",
-            mime="application/pdf"
-        )
+# ---------------- SKILL SECTION ----------------
+st.header("Your Skills")
+
+skills_have = st.text_area(
+    "Enter the skills you already know",
+    placeholder="Example: Python, Canva, Video Editing"
+)
+
+skills_learn = st.text_area(
+    "Enter the skills you want to learn",
+    placeholder="Example: AI, Web Development, UI/UX"
+)
+
+# Save button
+if st.button("Save Skills"):
+    if skills_have and skills_learn:
+        st.success("Skills Saved Successfully!")
+
+        st.subheader("📌 Your Profile")
+
+        st.write("### Skills You Have")
+        st.write(skills_have)
+
+        st.write("### Skills You Want to Learn")
+        st.write(skills_learn)
+
+    else:
+        st.warning("Please fill all fields")
+
+# ---------------- FOOTER ----------------
+st.markdown("---")
+st.write("Made with ❤️ using Streamlit")
